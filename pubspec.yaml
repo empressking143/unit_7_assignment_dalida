@@ -1,17 +1,17 @@
-name: unit_7_assignment_dalida
+name: unit_7_assignment_pamplona
 description: "A new Flutter project."
-
 publish_to: 'none'
 
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.5.4
+  sdk: ">=3.5.3 <4.0.0"  
 
 dependencies:
   flutter:
     sdk: flutter
-  http: ^1.2.2
+  cupertino_icons: ^1.0.8
+  http: ^1.2.2  
   flutter_expanded_tile: ^0.4.0
 
 dev_dependencies:
