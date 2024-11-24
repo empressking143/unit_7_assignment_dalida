@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:flutter_expanded_tile/flutter_expanded_tile.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -11,83 +11,81 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  Future<List<dynamic>> fetchCharacters() async {
-    final response = await http.get(Uri.parse('https://www.themealdb.com/api/json/v1/1/search.php?f=a'));
+  late Future<List<dynamic>> staffFuture;
+
+  final String apiUrl = "https://hp-api.onrender.com/api/characters/staff";
+
+  Future<List<dynamic>> fetchStaffData() async {
+    final response = await http.get(Uri.parse(apiUrl));
 
     if (response.statusCode == 200) {
-      final Map<String, dynamic> jsonData = json.decode(response.body);
-      return jsonData['meals']; 
+      return jsonDecode(response.body);
     } else {
-      throw Exception('Failed to load characters');
+      throw Exception("Failed to load data");
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    staffFuture = fetchStaffData();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Meal List"),
+        title: const Text("Unit 7 - API Calls"),
       ),
       body: FutureBuilder<List<dynamic>>(
-        future: fetchCharacters(),
+        future: staffFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text("Error: ${snapshot.error}"));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text("No meals found"));
-          } else {
-            return ListView.builder(
-              itemCount: snapshot.data!.length,
-              itemBuilder: (context, index) {
-                final character = snapshot.data![index];
-                final controller = ExpandedTileController();
+          }
 
-                String description = 'This is ${character['strMeal']}, which is a popular dish.';
+          if (snapshot.hasError) {
+            return Center(child: Text("Error: ${snapshot.error}"));
+          }
+
+          if (snapshot.hasData && snapshot.data != null) {
+            return ExpandedTileList.builder(
+              itemCount: snapshot.data!.length,
+              itemBuilder: (context, index, controller) {
+                final staffMember = snapshot.data![index];
+                final String name = staffMember['name'] ?? 'No name available';
+                final String imageUrl = staffMember['image'] ?? '';
+                final String description = staffMember['actor'] ?? 'No description available';
+                final String species = staffMember['species'] ?? 'Unknown species';
+                final String house = staffMember['house'] ?? 'Unknown house';
+                final String dateOfBirth = staffMember['dateOfBirth'] ?? 'Unknown date of birth';
+                final bool alive = staffMember['alive'] ?? false;
 
                 return ExpandedTile(
                   controller: controller,
-                  title: Row(
+                  title: Text(name),
+                  leading: imageUrl.isNotEmpty
+                      ? Image.network(imageUrl, width: 50, height: 50, fit: BoxFit.cover)
+                      : const Icon(Icons.person),
+                  content: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.restaurant),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              character['strMeal'] ?? 'No Name',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      imageUrl.isNotEmpty
+                          ? Image.network(imageUrl, height: 150)
+                          : const SizedBox.shrink(),
+                      const SizedBox(height: 10),
+                      Text("Actor: $description"),
+                      Text("Species: $species"),
+                      Text("House: $house"),
+                      Text("Date of Birth: $dateOfBirth"),
+                      Text("Status: ${alive ? 'Alive' : 'Deceased'}"),
                     ],
-                  ),
-                  content: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        character['strMealThumb'] != null
-                            ? Image.network(character['strMealThumb'])
-                            : const SizedBox.shrink(),
-                        const SizedBox(height: 8),
-                        Text(
-                          description, 
-                          style: const TextStyle(fontSize: 14, fontStyle: FontStyle.italic),
-                        ),
-                      ],
-                    ),
                   ),
                 );
               },
             );
           }
+          return const Center(child: Text("No data found"));
         },
       ),
     );
